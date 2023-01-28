@@ -4,6 +4,6 @@ import { scrapText} from "../controller/text.js";
 
 const router=express.Router();
 
-router.get("/text-scrap",scrapText);
+router.post("/text-scrap",scrapText);
 
 export default router;
