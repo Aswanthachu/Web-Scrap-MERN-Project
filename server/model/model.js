@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
 
 const scrapSchema=mongoose.Schema({
+    webLink:{
+        type:String,
+        required:true
+    },
     textCount:{
         type:Number,
         required:true
@@ -9,9 +13,6 @@ const scrapSchema=mongoose.Schema({
         type:Array,
     },
     images:{
-        type:Array,
-    },
-    videos:{
         type:Array,
     },
     favourite:{

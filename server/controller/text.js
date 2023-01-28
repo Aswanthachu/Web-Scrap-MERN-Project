@@ -12,18 +12,26 @@ export const scrapText = async (req, res) => {
 
     await page.goto(websiteLink);
 
-    var text = await page.evaluate(() => document.body.innerText);
-    var links = await page.evaluate(() =>
+    const text = await page.evaluate(() => document.body.innerText);
+    const links = await page.evaluate(() =>
       Array.from(document.querySelectorAll("a"), (e) => e.href)
     );
-    var images = await page.evaluate(() =>
+    const images = await page.evaluate(() =>
       Array.from(document.querySelectorAll("img"), (e) => e.src)
     );
-    var videos = await page.evaluate(() =>
+    const videos = await page.evaluate(() =>
       Array.from(document.querySelectorAll("source"), (e) => e.src)
     );
 
     await browser.close();
+
+    let newArray = [];
+
+    if (videos.length > 0) {
+      newArray = images.concat(videos);
+    } else {
+      newArray = images;
+    }
 
     const textCount = text.split(" ").filter((txt) => {
       return txt != "";
@@ -32,14 +40,14 @@ export const scrapText = async (req, res) => {
     const storedData = await scrapedData.create({
       textCount,
       links,
-      images,
-      videos,
+      images: newArray,
+      webLink:websiteLink
     });
 
     res.status(200).json(storedData);
   } catch (error) {
     console.log(error);
-    res.status(400).json({message:"Internal server error."});
+    res.status(400).json({ message: "Internal server error." });
   }
 };
 
@@ -47,46 +55,47 @@ export const scrapText = async (req, res) => {
 
 export const getScrapDeatails = async (req, res) => {
   try {
-
-    const datas=await scrapedData.find({});
+    const datas = await scrapedData.find({});
     res.status(200).json(datas);
-
   } catch (error) {
     console.log(error);
-    res.status(400).json({message:"Internal server error."});
+    res.status(400).json({ message: "Internal server error." });
   }
 };
 
 // Deleting of one scraped data
 
-export const deleteScrapedData=async(req,res)=>{
+export const deleteScrapedData = async (req, res) => {
   console.log("hii");
-  const {id}=req.params;
+  const { id } = req.params;
 
   try {
-    await scrapedData.findByIdAndRemove({id});
-    res.status(200).json({message:"deletion of data is successfully completed."});
-
+    await scrapedData.findByIdAndRemove({ id });
+    res
+      .status(200)
+      .json({ message: "deletion of data is successfully completed." });
   } catch (error) {
     console.log(error);
-    res.status(400).json({message:"Internal server Error."});
+    res.status(400).json({ message: "Internal server Error." });
   }
 };
 
 // Add to favourite
 
-export const addToFavourite=async(req,res)=>{
-
-  const {id}=req.params;
+export const addToFavourite = async (req, res) => {
+  const { id } = req.params;
 
   try {
-    const updatedData=await scrapedData.findByIdAndUpdate(id,{favourite:true},{new:true});
+    const updatedData = await scrapedData.findByIdAndUpdate(
+      id,
+      { favourite: true },
+      { new: true }
+    );
 
     res.status(200).json(updatedData);
     console.log(updatedData);
   } catch (error) {
     console.log(error);
-    res.status(400).json({message:"Internal server Error."});
+    res.status(400).json({ message: "Internal server Error." });
   }
-}
-
+};
