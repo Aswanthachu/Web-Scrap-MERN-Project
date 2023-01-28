@@ -66,14 +66,11 @@ export const getScrapDeatails = async (req, res) => {
 // Deleting of one scraped data
 
 export const deleteScrapedData = async (req, res) => {
-  console.log("hii");
   const { id } = req.params;
 
   try {
-    await scrapedData.findByIdAndRemove({ id });
-    res
-      .status(200)
-      .json({ message: "deletion of data is successfully completed." });
+    await scrapedData.findByIdAndRemove(id);
+    res.status(200).json({ message: "deletion of data is successfully completed." });
   } catch (error) {
     console.log(error);
     res.status(400).json({ message: "Internal server Error." });

@@ -6,7 +6,7 @@ const router=express.Router();
 
 router.post("/text-scrap",scrapText);
 router.get("/get-all-scraped-details",getScrapDeatails);
-router.delete("/remove-one-scraped-data:id",deleteScrapedData);
-router.patch("/add-to-favourite:id",addToFavourite);
+router.delete("/remove-one-scraped-data/:id",deleteScrapedData);
+router.patch("/add-to-favourite/:id",addToFavourite);
 
 export default router;
