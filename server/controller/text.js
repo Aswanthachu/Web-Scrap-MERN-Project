@@ -24,14 +24,17 @@ export const scrapText = async (req, res) => {
     );
 
     await browser.close();
+    let newArray=[];
 
-    let newArray = [];
-
+    let newLinks = links.filter((li)=>li !=="javascript:void(0);" && li !== "javascript:void(0)")
+    
     if (videos.length > 0) {
       newArray = images.concat(videos);
     } else {
       newArray = images;
     }
+
+    const newMediaLinks=newArray.filter((li)=> li !== "");
 
     const textCount = text.split(" ").filter((txt) => {
       return txt != "";
@@ -39,9 +42,9 @@ export const scrapText = async (req, res) => {
 
     const storedData = await scrapedData.create({
       textCount,
-      links,
-      images: newArray,
-      webLink:websiteLink
+      links:newLinks,
+      images: newMediaLinks,
+      webLink: websiteLink,
     });
 
     res.status(200).json(storedData);
@@ -55,7 +58,8 @@ export const scrapText = async (req, res) => {
 
 export const getScrapDeatails = async (req, res) => {
   try {
-    const datas = await scrapedData.find({}).sort({"createdAt":-1});
+    const datas = await scrapedData.find({}).sort({ createdAt: -1 });
+    console.log(datas[0].images);
     res.status(200).json(datas);
   } catch (error) {
     console.log(error);
@@ -70,7 +74,9 @@ export const deleteScrapedData = async (req, res) => {
 
   try {
     await scrapedData.findByIdAndRemove(id);
-    res.status(200).json({ message: "deletion of data is successfully completed." });
+    res
+      .status(200)
+      .json({ message: "deletion of data is successfully completed." });
   } catch (error) {
     console.log(error);
     res.status(400).json({ message: "Internal server Error." });

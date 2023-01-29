@@ -64,13 +64,17 @@ const Home = () => {
 
   const handleAddFav = async (e, id) => {
     e.preventDefault();
+    console.log(id);
     try {
       const favouriteScrap = await axios.patch(
         `http://localhost:5000/text/add-to-favourite/${id}`
       );
-      setScraps((prevState) =>
-        prevState.filter((sc) => (sc._id === id ? favouriteScrap : sc))
-      );
+      console.log(favouriteScrap.data);
+      const upadatedArray=scraps.filter(sc=> sc._id !== id ? {...sc,favourite:true} : sc);
+      // console.log(upadatedArray);
+      // setScraps((prevState) =>
+      //   prevState.filter((sc) => sc._id == id ? favouriteScrap.data : sc)
+      // );
     } catch (error) {
       console.log(error);
     }
@@ -105,7 +109,7 @@ const Home = () => {
         >
           Get Insights
         </button>
-        {scraps.length >0 &&
+        {scraps.length > 0 && (
           <div className="w-full p-6">
             <h1 className="text-2xl font-semibold mb-10">Results</h1>
             <table className="w-full border border-black ">
@@ -136,6 +140,7 @@ const Home = () => {
                       <a
                         href={sc.webLink}
                         className="text-blue-600 w-[30px] truncate"
+                        target={"_blank"}
                       >
                         {sc.webLink}
                       </a>
@@ -153,6 +158,7 @@ const Home = () => {
                             key={index}
                             href={link}
                             className="text-blue-600 w-[30px]"
+                            target={"_blank"}
                           >
                             {link}
                           </a>
@@ -167,6 +173,7 @@ const Home = () => {
                             key={index}
                             href={img}
                             className="text-blue-600 w-[30px]"
+                            target={"_blank"}
                           >
                             {img}
                           </a>
@@ -194,7 +201,7 @@ const Home = () => {
                 ))}
             </table>
           </div>
-        }
+        )}
       </div>
     </section>
   );
