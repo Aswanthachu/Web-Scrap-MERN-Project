@@ -18,8 +18,13 @@ const scrapSchema=mongoose.Schema({
     favourite:{
         type:Boolean,
         default:false
+    },
+    searchedAt:{
+        type:Date,
+        default:Date.now(),
+        required:true
     }
-},{timestamps:true});
+});
 
 const scrapedData = mongoose.model('scrapedData',scrapSchema);
 export default scrapedData;

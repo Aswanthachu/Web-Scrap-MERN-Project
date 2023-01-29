@@ -16,10 +16,14 @@ const Home = () => {
   const handleClick = async (e) => {
     e.preventDefault();
 
-    if (!isWebUri(webLink)) {
-      setError("Input a valid website link");
-      return;
-    } else {
+    let regex1 = new RegExp(
+      /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi
+    );
+    // let regex2 = new RegExp(
+    //   /^(?!-)[A-Za-z0-9-]+([\-\.]{1}[a-z0-9]+)*\.[A-Za-z]{2,6}$/
+    // );
+
+    const scrapingProcess = async (webLink) => {
       setLoading(true);
       try {
         const scrapedData = await axios.post(
@@ -28,11 +32,35 @@ const Home = () => {
         );
         if (scrapedData) {
           setLoading(false);
-          setScraps((prevState) => [scrapedData.data, ...prevState]);
+          if (scraps.find((obj) => obj._id === scrapedData.data._id)) {
+            setScraps((prevState) => [
+              scrapedData.data,
+              ...prevState.filter((sc) => sc._id !== scrapedData.data._id),
+            ]);
+          } else {
+            setScraps((prevState) => [scrapedData.data, ...prevState]);
+          }
         }
       } catch (error) {
         console.log(error);
       }
+    };
+
+    if (!isWebUri(webLink)) {
+      if (regex1.test(webLink)) {
+        scrapingProcess(webLink);
+      } 
+      // else if (regex2.test(webLink)) {
+      //   console.log("hello");
+      //   scrapingProcess(webLink);
+      // } 
+      else {
+        setError("Input a valid website link");
+        return;
+      }
+    } else {
+      setError("Input a valid website link");
+      return;
     }
   };
 
@@ -44,15 +72,9 @@ const Home = () => {
         "http://localhost:5000/text/get-all-scraped-details"
       );
       if (scrap) {
-        if (scraps.find((obj) => obj._id === scrap._id)) {
-          setScraps((prevState) => [
-            scrap.data,
-            ...prevState.filter((sc) => sc._id === scrap._id),
-          ]);
-        } else {
-          setScraps(scrap.data);
-        }
+        setScraps(scrap.data);
       }
+      // }
     }
     scraping();
   }, []);
@@ -75,17 +97,11 @@ const Home = () => {
     e.preventDefault();
     console.log(id);
     try {
-      const favouriteScrap = await axios.patch(
-        `http://localhost:5000/text/add-to-favourite/${id}`
+      await axios.patch(`http://localhost:5000/text/add-to-favourite/${id}`);
+
+      setScraps((prevState) =>
+        prevState.map((sc) => (sc._id == id ? { ...sc, favourite: true } : sc))
       );
-      console.log(favouriteScrap.data);
-      const upadatedArray = scraps.filter((sc) =>
-        sc._id !== id ? { ...sc, favourite: true } : sc
-      );
-      // console.log(upadatedArray);
-      // setScraps((prevState) =>
-      //   prevState.filter((sc) => sc._id == id ? favouriteScrap.data : sc)
-      // );
     } catch (error) {
       console.log(error);
     }
@@ -160,7 +176,7 @@ const Home = () => {
                       <p className="w-[30px]">{sc.textCount}</p>
                     </td>
                     <td className="border border-black w-[10%] pt-5">
-                      {/* <p className="w-[30px]">{sc.favourite.toString()}</p> */}
+                      <p className="w-[30px]">{sc.favourite.toString()}</p>
                     </td>
                     <td className="border border-black w-[10%] max-w-[23%] align-top">
                       {sc.links.map((link, index) => (

@@ -5,17 +5,30 @@ import scrapedData from "../model/model.js";
 // scraping of data from web and return
 
 export const scrapText = async (req, res) => {
-  const websiteLink = req.body.web;
+  const webLink = req.body.web;
+
+  let regex1 = new RegExp(
+    /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi
+  );
+  let regex2 = new RegExp(
+    /^(?!-)[A-Za-z0-9-]+([\-\.]{1}[a-z0-9]+)*\.[A-Za-z]{2,6}$/
+  );
+
+  // websiteLink
+
+  if(regex1.test())
 
   try {
     const existing = await scrapedData.findOne({ webLink: websiteLink });
     if (existing) {
       const existingScrap = await scrapedData.findOneAndUpdate(
         { webLink: websiteLink },
-        { createdAt: new Date() }
+        { searchedAt: Date.now() },
+        { new: true }
       );
       res.status(200).json(existingScrap);
-    } else {
+    } 
+    else {
       const browser = await puppeteer.launch({ headless: false });
       const page = await browser.newPage();
 
@@ -60,7 +73,7 @@ export const scrapText = async (req, res) => {
 
       const noEmptyMediaLinks = newArray.filter((li) => li !== "");
 
-      const noDuplicateMediaLinks=removeDuplicates(noEmptyMediaLinks);
+      const noDuplicateMediaLinks = removeDuplicates(noEmptyMediaLinks);
 
       // counting the words from word list
 
@@ -87,8 +100,7 @@ export const scrapText = async (req, res) => {
 
 export const getScrapDeatails = async (req, res) => {
   try {
-    const datas = await scrapedData.find({}).sort({ createdAt: -1 });
-    console.log(datas[0].images);
+    const datas = await scrapedData.find({}).sort({ searchedAt: -1 });
     res.status(200).json(datas);
   } catch (error) {
     console.log(error);
