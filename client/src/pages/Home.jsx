@@ -1,28 +1,38 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { isWebUri } from "valid-url";
 
 const Home = () => {
   const [webLink, setWebLink] = useState("");
   const [error, setError] = useState("");
   const [scraps, setScraps] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
+    setError("");
     setWebLink(e.target.value);
   };
-
-  // Handle onclick function for scraping
 
   const handleClick = async (e) => {
     e.preventDefault();
 
-    try {
-      const scrapedData = await axios.post(
-        "http://localhost:5000/text/text-scrap",
-        { web: webLink }
-      );
-      console.log(scrapedData);
-    } catch (error) {
-      console.log(error);
+    if (!isWebUri(webLink)) {
+      setError("Input a valid website link");
+      return;
+    } else {
+      setLoading(true);
+      try {
+        const scrapedData = await axios.post(
+          "http://localhost:5000/text/text-scrap",
+          { web: webLink }
+        );
+        if (scrapedData) {
+          setLoading(false);
+          setScraps((prevState) => [scrapedData.data, ...prevState]);
+        }
+      } catch (error) {
+        console.log(error);
+      }
     }
   };
 
@@ -41,21 +51,35 @@ const Home = () => {
   // Handle Delete functionality for a scrap data
 
   const handleDelete = async (e, id) => {
+    e.preventDefault();
     try {
       await axios.delete(
         `http://localhost:5000/text/remove-one-scraped-data/${id}`
+      );
+      setScraps((prevState) => prevState.filter((sc) => sc._id !== id));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleAddFav = async (e, id) => {
+    e.preventDefault();
+    try {
+      const favouriteScrap = await axios.patch(
+        `http://localhost:5000/text/add-to-favourite/${id}`
+      );
+      setScraps((prevState) =>
+        prevState.filter((sc) => (sc._id === id ? favouriteScrap : sc))
       );
     } catch (error) {
       console.log(error);
     }
   };
 
-  const handleAddFav = () => {};
-
   console.log(scraps);
 
   return (
-    <section className="w-full min-h-screen  p-3 bg-[#dadada] flex max-w-screen">
+    <section className="w-full min-h-screen  p-1 bg-[#dadada] flex max-w-screen">
       <div className="w-full flex justify-center items-center flex-col space-y-16 mt-8">
         <h1 className="flex justify-center items-center text-3xl font-semibold">
           Webpage Scraper
@@ -68,7 +92,12 @@ const Home = () => {
             className="border border-black rounded-none hover:rounded-none active:rounded-none w-[50%] p-3"
             onChange={handleChange}
           />
-          <p className="text-red-700 font-medium text-lg">error message</p>
+          {error && <p className="text-red-700 font-medium text-lg">{error}</p>}
+          {loading && (
+            <p className="text-green-700 font-medium text-lg">
+              Scraping Datas from Entered Url...Please Wait.
+            </p>
+          )}
         </div>
         <button
           className="border border-black p-3 w-[30%] bg-slate-500 hover:scale-105 rounded-lg"
@@ -76,77 +105,96 @@ const Home = () => {
         >
           Get Insights
         </button>
-        <div className="w-full p-6">
-          <h1 className="text-2xl font-semibold mb-10">Results</h1>
-          <table className="w-full border border-black ">
-            <tr className="border border-black w-full text-xl">
-              <th className="border border-black w-[23%] text-start">
-                Domain Name
-              </th>
-              <th className="border border-black w-[10%] text-start">
-                Word Count
-              </th>
-              <th className="border border-black w-[10%] text-start">
-                Favourite
-              </th>
-              <th className="border border-black w-[23%] text-start max-w-[23%]">
-                Web Links
-              </th>
-              <th className="border border-black w-[23%] text-start">
-                Media Links
-              </th>
-              <th className="border border-black w-[10%] text-start">
-                Actions
-              </th>
-            </tr>
-            {scraps &&
-              scraps.map((sc) => (
-                <tr className="w-full" key={sc._id}>
-                  <td className="border border-black w-[23%]">{sc.webLink}</td>
-                  <td className="border border-black w-[10%]">
-                    {sc.textCount}
-                  </td>
-                  <td className="border border-black w-[10%]">
-                    {sc.favourite.toString()}
-                  </td>
-                  <td className="border border-black w-[23%] max-w-[23%]">
-                    {sc.links.map((link, index) => (
-                      <div className="text-ellipsis">
-                        <a key={index} href={link} className="text-blue-600">
-                          {link}
-                        </a>
-                        <br/>
-                      </div>
-                    ))}
-                  </td>
-                  <td className="border border-black w-[23%]">
-                    {sc.images.map((img, index) => (
-                      <div className="text-ellipsis">
-                        <a key={index} href={img} className="text-blue-600">{img}</a>
-                        <br />
-                      </div>
-                    ))}
-                  </td>
-                  <td className="border border-black w-[10%] flex flex-col">
-                    <button
-                      className="border p-3 border-black"
-                      onClick={() => {
-                        handleDelete(sc._id);
-                      }}
-                    >
-                      Remove
-                    </button>
-                    <button
-                      className="border p-3 border-black"
-                      onClick={handleAddFav(sc._id)}
-                    >
-                      Add to Fav
-                    </button>
-                  </td>
-                </tr>
-              ))}
-          </table>
-        </div>
+        {scraps.length >0 &&
+          <div className="w-full p-6">
+            <h1 className="text-2xl font-semibold mb-10">Results</h1>
+            <table className="w-full border border-black ">
+              <tr className="border border-black w-full text-xl">
+                <th className="border border-black w-[23%] text-start ">
+                  Domain Name
+                </th>
+                <th className="border border-black w-[10%] text-start">
+                  Word Count
+                </th>
+                <th className="border border-black w-[10%] text-start">
+                  Favourite
+                </th>
+                <th className="border border-black w-[23%] text-start max-w-[23%]">
+                  Web Links
+                </th>
+                <th className="border border-black w-[23%] text-start">
+                  Media Links
+                </th>
+                <th className="border border-black w-[10%] text-start">
+                  Actions
+                </th>
+              </tr>
+              {scraps &&
+                scraps.map((sc) => (
+                  <tr className="w-full align-top" key={sc._id}>
+                    <td className="border border-black min-w-[23%] text-start pt-5 ">
+                      <a
+                        href={sc.webLink}
+                        className="text-blue-600 w-[30px] truncate"
+                      >
+                        {sc.webLink}
+                      </a>
+                    </td>
+                    <td className="border border-black w-[10%] pt-5">
+                      <p className="w-[30px]">{sc.textCount}</p>
+                    </td>
+                    <td className="border border-black w-[10%] pt-5">
+                      <p className="w-[30px]">{sc.favourite.toString()}</p>
+                    </td>
+                    <td className="border border-black w-[10%] max-w-[23%] align-top">
+                      {sc.links.map((link, index) => (
+                        <div className="truncate max-w-[300px]">
+                          <a
+                            key={index}
+                            href={link}
+                            className="text-blue-600 w-[30px]"
+                          >
+                            {link}
+                          </a>
+                          <br />
+                        </div>
+                      ))}
+                    </td>
+                    <td className="border border-black w-[23%]">
+                      {sc.images.map((img, index) => (
+                        <div className="truncate max-w-[300px]">
+                          <a
+                            key={index}
+                            href={img}
+                            className="text-blue-600 w-[30px]"
+                          >
+                            {img}
+                          </a>
+                          <br />
+                        </div>
+                      ))}
+                    </td>
+                    <td className=" w-[100%] space-y-5 border border-black text-center pt-6">
+                      <button
+                        className="border p-3 border-black w-fit rounded-lg hover:scale-105 bg-slate-900 text-white"
+                        onClick={(e) => {
+                          handleDelete(e, sc._id);
+                        }}
+                      >
+                        Remove
+                      </button>
+                      <button
+                        className="border p-3 border-black w-fit rounded-lg hover:scale-105 bg-slate-900 text-white"
+                        onClick={(e) => handleAddFav(e, sc._id)}
+                      >
+                        Add to Fav
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+            </table>
+          </div>
+        }
       </div>
     </section>
   );

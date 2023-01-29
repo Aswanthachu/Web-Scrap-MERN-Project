@@ -55,7 +55,7 @@ export const scrapText = async (req, res) => {
 
 export const getScrapDeatails = async (req, res) => {
   try {
-    const datas = await scrapedData.find({});
+    const datas = await scrapedData.find({}).sort({"createdAt":-1});
     res.status(200).json(datas);
   } catch (error) {
     console.log(error);
@@ -90,7 +90,6 @@ export const addToFavourite = async (req, res) => {
     );
 
     res.status(200).json(updatedData);
-    console.log(updatedData);
   } catch (error) {
     console.log(error);
     res.status(400).json({ message: "Internal server Error." });
