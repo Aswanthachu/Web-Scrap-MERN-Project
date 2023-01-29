@@ -30,7 +30,8 @@ const Home = () => {
           "http://localhost:5000/text/text-scrap",
           { web: webLink }
         );
-        if (scrapedData) {
+        console.log(scrapedData);
+        if (scrapedData  && scrapedData.status === 200) {
           setLoading(false);
           if (scraps.find((obj) => obj._id === scrapedData.data._id)) {
             setScraps((prevState) => [
@@ -43,6 +44,7 @@ const Home = () => {
         }
       } catch (error) {
         console.log(error);
+        setError(error.response.data.message);
       }
     };
 
@@ -50,17 +52,12 @@ const Home = () => {
       if (regex1.test(webLink)) {
         scrapingProcess(webLink);
       } 
-      // else if (regex2.test(webLink)) {
-      //   console.log("hello");
-      //   scrapingProcess(webLink);
-      // } 
       else {
         setError("Input a valid website link");
         return;
       }
     } else {
-      setError("Input a valid website link");
-      return;
+      scrapingProcess(webLink);
     }
   };
 
@@ -124,7 +121,7 @@ const Home = () => {
             onChange={handleChange}
           />
           {error && <p className="text-red-700 font-medium text-lg">{error}</p>}
-          {loading && (
+          {loading && !error && (
             <p className="text-green-700 font-medium text-lg">
               Scraping Datas from Entered Url...Please Wait.
             </p>

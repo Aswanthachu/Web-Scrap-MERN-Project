@@ -1,4 +1,5 @@
 import puppeteer from "puppeteer";
+import { isWebUri } from "valid-url";
 
 import scrapedData from "../model/model.js";
 
@@ -10,14 +11,17 @@ export const scrapText = async (req, res) => {
   let regex1 = new RegExp(
     /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi
   );
-  let regex2 = new RegExp(
-    /^(?!-)[A-Za-z0-9-]+([\-\.]{1}[a-z0-9]+)*\.[A-Za-z]{2,6}$/
-  );
 
-  // websiteLink
+  let websiteLink = "";
 
-  if(regex1.test())
+  if (isWebUri(webLink)) {
+    websiteLink = webLink;
+  } else if (regex1.test(webLink)) {
+    websiteLink = "http://" + webLink;
+  }
 
+  const browser = await puppeteer.launch({ headless: false });
+  const page = await browser.newPage();
   try {
     const existing = await scrapedData.findOne({ webLink: websiteLink });
     if (existing) {
@@ -27,11 +31,7 @@ export const scrapText = async (req, res) => {
         { new: true }
       );
       res.status(200).json(existingScrap);
-    } 
-    else {
-      const browser = await puppeteer.launch({ headless: false });
-      const page = await browser.newPage();
-
+    } else {
       await page.goto(websiteLink);
 
       const text = await page.evaluate(() => document.body.innerText);
@@ -92,7 +92,8 @@ export const scrapText = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    res.status(400).json({ message: "Internal server error." });
+    res.status(400).json({ message: "Page not found." });
+    await browser.close();
   }
 };
 
