@@ -6,48 +6,77 @@ import scrapedData from "../model/model.js";
 
 export const scrapText = async (req, res) => {
   const websiteLink = req.body.web;
+
   try {
-    const browser = await puppeteer.launch({ headless: false });
-    const page = await browser.newPage();
-
-    await page.goto(websiteLink);
-
-    const text = await page.evaluate(() => document.body.innerText);
-    const links = await page.evaluate(() =>
-      Array.from(document.querySelectorAll("a"), (e) => e.href)
-    );
-    const images = await page.evaluate(() =>
-      Array.from(document.querySelectorAll("img"), (e) => e.src)
-    );
-    const videos = await page.evaluate(() =>
-      Array.from(document.querySelectorAll("source"), (e) => e.src)
-    );
-
-    await browser.close();
-    let newArray=[];
-
-    let newLinks = links.filter((li)=>li !=="javascript:void(0);" && li !== "javascript:void(0)")
-    
-    if (videos.length > 0) {
-      newArray = images.concat(videos);
+    const existing = await scrapedData.findOne({ webLink: websiteLink });
+    if (existing) {
+      const existingScrap = await scrapedData.findOneAndUpdate(
+        { webLink: websiteLink },
+        { createdAt: new Date() }
+      );
+      res.status(200).json(existingScrap);
     } else {
-      newArray = images;
+      const browser = await puppeteer.launch({ headless: false });
+      const page = await browser.newPage();
+
+      await page.goto(websiteLink);
+
+      const text = await page.evaluate(() => document.body.innerText);
+      const links = await page.evaluate(() =>
+        Array.from(document.querySelectorAll("a"), (e) => e.href)
+      );
+      const images = await page.evaluate(() =>
+        Array.from(document.querySelectorAll("img"), (e) => e.src)
+      );
+      const videos = await page.evaluate(() =>
+        Array.from(document.querySelectorAll("source"), (e) => e.src)
+      );
+
+      await browser.close();
+
+      // function for remove duplicate elements
+
+      function removeDuplicates(arr) {
+        return arr.filter((item, index) => arr.indexOf(item) === index);
+      }
+
+      // processing of links remove duplication and empty strings
+
+      var noEmptyLinks = links.filter(
+        (li) => li !== "javascript:void(0);" && li !== "javascript:void(0)"
+      );
+
+      let noDuplicateLinks = removeDuplicates(noEmptyLinks);
+
+      // processing of duplication of links from media strings
+
+      let newArray = [];
+
+      if (videos.length > 0) {
+        newArray = images.concat(videos);
+      } else {
+        newArray = images;
+      }
+
+      const noEmptyMediaLinks = newArray.filter((li) => li !== "");
+
+      const noDuplicateMediaLinks=removeDuplicates(noEmptyMediaLinks);
+
+      // counting the words from word list
+
+      const textCount = text.split(" ").filter((txt) => {
+        return txt != "";
+      }).length;
+
+      const storedData = await scrapedData.create({
+        textCount,
+        links: noDuplicateLinks,
+        images: noDuplicateMediaLinks,
+        webLink: websiteLink,
+      });
+
+      res.status(200).json(storedData);
     }
-
-    const newMediaLinks=newArray.filter((li)=> li !== "");
-
-    const textCount = text.split(" ").filter((txt) => {
-      return txt != "";
-    }).length;
-
-    const storedData = await scrapedData.create({
-      textCount,
-      links:newLinks,
-      images: newMediaLinks,
-      webLink: websiteLink,
-    });
-
-    res.status(200).json(storedData);
   } catch (error) {
     console.log(error);
     res.status(400).json({ message: "Internal server error." });

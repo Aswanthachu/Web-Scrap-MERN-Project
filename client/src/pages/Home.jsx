@@ -43,7 +43,16 @@ const Home = () => {
       const scrap = await axios.get(
         "http://localhost:5000/text/get-all-scraped-details"
       );
-      if (scrap) setScraps(scrap.data);
+      if (scrap) {
+        if (scraps.find((obj) => obj._id === scrap._id)) {
+          setScraps((prevState) => [
+            scrap.data,
+            ...prevState.filter((sc) => sc._id === scrap._id),
+          ]);
+        } else {
+          setScraps(scrap.data);
+        }
+      }
     }
     scraping();
   }, []);
@@ -70,7 +79,9 @@ const Home = () => {
         `http://localhost:5000/text/add-to-favourite/${id}`
       );
       console.log(favouriteScrap.data);
-      const upadatedArray=scraps.filter(sc=> sc._id !== id ? {...sc,favourite:true} : sc);
+      const upadatedArray = scraps.filter((sc) =>
+        sc._id !== id ? { ...sc, favourite: true } : sc
+      );
       // console.log(upadatedArray);
       // setScraps((prevState) =>
       //   prevState.filter((sc) => sc._id == id ? favouriteScrap.data : sc)
@@ -149,7 +160,7 @@ const Home = () => {
                       <p className="w-[30px]">{sc.textCount}</p>
                     </td>
                     <td className="border border-black w-[10%] pt-5">
-                      <p className="w-[30px]">{sc.favourite.toString()}</p>
+                      {/* <p className="w-[30px]">{sc.favourite.toString()}</p> */}
                     </td>
                     <td className="border border-black w-[10%] max-w-[23%] align-top">
                       {sc.links.map((link, index) => (
